@@ -187,7 +187,22 @@
   (testing "take inside binding of loop"
     (is (= 42
            (<!! (go (loop [x (<! (identity-chan 42))]
-                     x))))))
+                      x)))))
+    (is (= 100
+           (let [test-chan (chan 1)]
+             (thread (loop [seq (range 100)]
+                       (when-not (empty? seq)
+                         (>!! test-chan (first seq))
+                         (recur (rest seq))))
+                     (close! test-chan))
+             (-> (go (loop [read-vals []
+                            read-val (<! test-chan)]
+                       (if read-val
+                         (recur (conj read-vals read-val)
+                                (<! test-chan))
+                         read-vals)))
+                 <!!
+                 count)))))
 
   (testing "can get from a catch"
     (let [c (identity-chan 42)]
