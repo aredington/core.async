@@ -173,6 +173,8 @@
     (close! c)
     c))
 
+(defrecord GoBlockTestRecord [value])
+
 (deftest async-test
   (testing "values are returned correctly"
     (is (= 10
@@ -204,7 +206,14 @@
       (is (= 42
              (<!! (go (try
                         (assert false)
-                        (catch Throwable ex (<! c))))))))))
+                        (catch Throwable ex (<! c)))))))))
+  (testing "record literals in go blocks"
+    (let [v (<!! (go (GoBlockTestRecord. 42)))]
+      (is (= GoBlockTestRecord
+             (class v))))
+    (let [v (<!! (go #clojure.core.async.ioc_macros_test.GoBlockTestRecord{:value 42}))]
+      (is (= GoBlockTestRecord
+             (class v))))))
 
 (deftest enqueued-chan-ops
   (testing "enqueued channel puts re-enter async properly"
